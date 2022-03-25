@@ -115,21 +115,24 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func createURL(w http.ResponseWriter, r *http.Request) {
-	var url Url
+	var url []Url
 	json.NewDecoder(r.Body).Decode(&url)
 
-	createPerson := db.Create(&url)
-	err = createPerson.Error
-	if err != nil {
-		json.NewEncoder(w).Encode(err)
-	} else {
-		// Response here
-		// update before response
-		db.Model(&url).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url.ID)})
+	// using loop for not only one POST
+	for idx := range url {
+		createPerson := db.Create(&url[idx])
+		err = createPerson.Error
+		if err != nil {
+			json.NewEncoder(w).Encode(err)
+		} else {
+			// Response here
+			// update before response
+			db.Model(&url[idx]).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url[idx].ID)})
 
-		// scale down the return value
-		rv := APIUrl{ID: url.ID, ShortUrl: url.ShortUrl}
-		json.NewEncoder(w).Encode(&rv)
+			// scale down the return value
+			rv := APIUrl{ID: url[idx].ID, ShortUrl: url[idx].ShortUrl}
+			json.NewEncoder(w).Encode(&rv)
+		}
 	}
 
 }

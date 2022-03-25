@@ -13,8 +13,8 @@ import (
 )
 
 type Url struct {
-	ID       uint `gorm:"primaryKey"`
-	Url      string
+	ID       uint   `gorm:"primaryKey"` // used for shortUrl index
+	Url      string `gorm:"unique"`     // prevent duplicate url
 	ExpireAt string
 	ShortUrl string
 }

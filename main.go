@@ -47,12 +47,14 @@ func main() {
 	if err != nil {
 		db, err = gorm.Open(dialect, dbURI_postgres)
 		if err != nil {
-			fmt.Printf("Fail to connect to postgresql database")
+			fmt.Println("Fail to connect to postgresql database")
+			panic("Stop process")
 		} else {
 			db = db.Exec("CREATE DATABASE urlshortener;")
 			db, err = gorm.Open(dialect, dbURI_urlShortener)
 			if err != nil {
 				fmt.Printf("Fail to create a new database")
+				panic("Stop process")
 			} else {
 				fmt.Printf("Create a new data base and connect to it")
 			}
@@ -71,6 +73,7 @@ func main() {
 	router.HandleFunc("/{id}", getURL).Methods("GET")
 
 	router.HandleFunc("/create/url", createURL).Methods("POST")
+	router.HandleFunc("/create/urls", createURLs).Methods("POST")
 
 	// Listener
 	http.ListenAndServe(":8080", router)
@@ -115,6 +118,27 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 }
 
 func createURL(w http.ResponseWriter, r *http.Request) {
+	var url Url
+	json.NewDecoder(r.Body).Decode(&url)
+
+	// using loop for not only one POST
+	createPerson := db.Create(&url)
+	err = createPerson.Error
+	if err != nil {
+		json.NewEncoder(w).Encode(err)
+	} else {
+		// Response here
+		// update before response
+		db.Model(&url).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url.ID)})
+
+		// scale down the return value
+		rv := APIUrl{ID: url.ID, ShortUrl: url.ShortUrl}
+		json.NewEncoder(w).Encode(&rv)
+	}
+
+}
+
+func createURLs(w http.ResponseWriter, r *http.Request) {
 	var url []Url
 	json.NewDecoder(r.Body).Decode(&url)
 

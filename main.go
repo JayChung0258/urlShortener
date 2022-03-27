@@ -76,7 +76,7 @@ func main() {
 	router.HandleFunc("/create/urls", createURLs).Methods("POST")
 
 	// Listener
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(":80", router)
 
 	// close connection to db when main func finishes
 	defer db.Close()

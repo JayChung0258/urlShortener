@@ -72,7 +72,7 @@ func main() {
 	router.HandleFunc("/urls", getURLs).Methods("GET")
 	router.HandleFunc("/{id}", getURL).Methods("GET")
 
-	router.HandleFunc("/create/url", createURL).Methods("POST")
+	router.HandleFunc("/api/v1/urls", createURL).Methods("POST")
 	router.HandleFunc("/create/urls", createURLs).Methods("POST")
 
 	// Listener

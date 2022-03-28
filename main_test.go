@@ -4,28 +4,56 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 
-	"github.com/go-playground/assert"
+	"github.com/DATA-DOG/go-sqlmock"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // test the sql func , assuming http request is OK
-func TestGetURLs(t *testing.T) {
-	t.Parallel()
+func TestGetURL(t *testing.T) {
+	//set const answer for this test
+	testQuery := "SELECT * FROM `urls` WHERE `id` = $1"
+	id := 1
 
-	r, _ := http.NewRequest("GET", "/urls", nil)
+	//create response writer and request for testing
+	r, _ := http.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
 
-	//Hack to try to fake gorilla/mux vars
-	// vars := map[string]string{
-	// 	"id": "1",
-	// }
+	//set up the mock sql connection
+	testDB, mock, err := sqlmock.New()
+	//handle error
+	if err != nil {
+		panic("error")
+	}
 
-	// CHANGE THIS LINE!!!
-	// r = mux.SetURLVars(r, vars)
+	// uses "gorm.io/driver/postgres" library
+	dialector := postgres.New(postgres.Config{
+		DSN:                  "sqlmock_db_0",
+		DriverName:           "postgres",
+		Conn:                 testDB,
+		PreferSimpleProtocol: true,
+	})
+	db, err = gorm.Open(dialector, &gorm.Config{})
+	//handle error
+	if err != nil {
+		panic("error")
+	}
 
-	getURLs(w, r)
+	//mock the db.Find function
+	rows := sqlmock.NewRows([]string{"id", "url", "expire_at", "short_url"}).
+		AddRow(1, "http://somelongurl.com", "some_date", "http://shorturl.com")
+	mock.ExpectQuery(regexp.QuoteMeta(testQuery)).
+		WillReturnRows(rows).WithArgs(id)
 
-	fmt.Println(w.Code)
-	assert.Equal(t, http.StatusOK, w.Code)
+	getURL(w, r)
+
+	fmt.Println("IPASDJOAJSDOIAJSDOIJASDOIAJDS")
+	fmt.Println(rows)
+	fmt.Println(w.Body)
+
+	//check values in mockedWriter using assert
+
 }

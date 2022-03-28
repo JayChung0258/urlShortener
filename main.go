@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Url struct {
@@ -29,7 +29,6 @@ var err error
 
 func main() {
 	// gain access to database by getting .env
-	dialect := os.Getenv("DIALECT")
 	host := os.Getenv("HOST")
 	dpPort := os.Getenv("DBPORT")
 	user := os.Getenv("USER")
@@ -37,21 +36,21 @@ func main() {
 	password := os.Getenv("PASSWORD")
 
 	// database connection string
-	dbURI_postgres := fmt.Sprintf("host=%s user=%s dbname=postgres sslmode=disable password =%s port=%s",
+	dsn_postgres := fmt.Sprintf("host=%s user=%s password=%s dbname=postgres port=%s sslmode=disable TimeZone=Asia/Shanghai",
 		host, user, password, dpPort)
-	dbURI_urlShortener := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password =%s port=%s",
-		host, user, dbName, password, dpPort)
+	dsn_urlShortener := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+		host, user, password, dbName, dpPort)
 
 	// connect to database or create a new one
-	db, err = gorm.Open(dialect, dbURI_urlShortener)
+	db, err = gorm.Open(postgres.Open(dsn_urlShortener), &gorm.Config{})
 	if err != nil {
-		db, err = gorm.Open(dialect, dbURI_postgres)
+		db, err = gorm.Open(postgres.Open(dsn_postgres), &gorm.Config{})
 		if err != nil {
 			fmt.Println("Fail to connect to postgresql database")
 			panic("Stop process")
 		} else {
 			db = db.Exec("CREATE DATABASE urlshortener;")
-			db, err = gorm.Open(dialect, dbURI_urlShortener)
+			db, err = gorm.Open(postgres.Open(dsn_urlShortener), &gorm.Config{})
 			if err != nil {
 				fmt.Printf("Fail to create a new database")
 				panic("Stop process")
@@ -78,8 +77,6 @@ func main() {
 	// Listener
 	http.ListenAndServe(":80", router)
 
-	// close connection to db when main func finishes
-	defer db.Close()
 }
 
 //API controllers
@@ -97,13 +94,15 @@ func getURLs(w http.ResponseWriter, r *http.Request) {
 
 func getURL(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-
 	var url Url
 
-	// *wait to fix the struct*
+	// stmt := db.Session(&gorm.Session{DryRun: true}).Find(&url, params["id"]).Statement
+	// syntax := stmt.SQL.String() //returns SQL query string without the param value
+	// fmt.Println(syntax)
+
 	err := db.Find(&url, params["id"]).Error
 	if err != nil {
-		errorHandler(w, r, http.StatusNotFound)
+		w.WriteHeader(http.StatusNotFound)
 	} else {
 		// check if expired
 		// RFC3339
@@ -118,7 +117,6 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(url.Url)
 		}
-
 	}
 
 }
@@ -135,7 +133,8 @@ func createURL(w http.ResponseWriter, r *http.Request) {
 	} else {
 		// Response here
 		// update before response
-		db.Model(&url).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url.ID)})
+		// db.Model(&url).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url.ID)})
+		db.Model(&url).Update("ShortUrl", "localhost/"+fmt.Sprint(url.ID))
 
 		// scale down the return value
 		rv := APIUrl{ID: url.ID, ShortUrl: url.ShortUrl}
@@ -157,7 +156,7 @@ func createURLs(w http.ResponseWriter, r *http.Request) {
 		} else {
 			// Response here
 			// update before response
-			db.Model(&url[idx]).Update(Url{ShortUrl: "localhost/" + fmt.Sprint(url[idx].ID)})
+			db.Model(&url[idx]).Update("ShortUrl", "localhost/"+fmt.Sprint(url[idx].ID))
 
 			// scale down the return value
 			rv := APIUrl{ID: url[idx].ID, ShortUrl: url[idx].ShortUrl}

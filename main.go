@@ -87,9 +87,12 @@ func getURLs(w http.ResponseWriter, r *http.Request) {
 	// define a type
 	var urls []Url
 	// find and match
-	db.Find(&urls)
-
-	json.NewEncoder(w).Encode(&urls)
+	err := db.Find(&urls).Error
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+	} else {
+		json.NewEncoder(w).Encode(&urls)
+	}
 }
 
 func getURL(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +100,8 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 
 	var url Url
 
-	err = db.Find(&url, params["id"]).Error
+	// *wait to fix the struct*
+	err := db.Find(&url, params["id"]).Error
 	if err != nil {
 		errorHandler(w, r, http.StatusNotFound)
 	} else {
@@ -108,8 +112,10 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 		expired := timeT.Before(now)
 
 		if expired {
+			// w.WriteHeader(http.StatusNotFound)
 			errorHandler(w, r, http.StatusNotFound)
 		} else {
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(url.Url)
 		}
 

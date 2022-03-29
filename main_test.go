@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"net/http/httptest"
 	"regexp"
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,18 +14,13 @@ import (
 // test the sql func , assuming http request is OK
 func TestGetURL(t *testing.T) {
 	//set const answer for this test
-	testQuery := "SELECT * FROM `urls` WHERE `id` = $1"
-	id := 1
-
-	//create response writer and request for testing
-	r, _ := http.NewRequest("GET", "/", nil)
-	w := httptest.NewRecorder()
+	testQuery := `SELECT * FROM "urls" WHERE "urls"."id" = $1`
+	id := "1"
 
 	//set up the mock sql connection
 	testDB, mock, err := sqlmock.New()
-	//handle error
 	if err != nil {
-		panic("error")
+		panic("sqlmock.New() occurs an error")
 	}
 
 	// uses "gorm.io/driver/postgres" library
@@ -37,23 +31,33 @@ func TestGetURL(t *testing.T) {
 		PreferSimpleProtocol: true,
 	})
 	db, err = gorm.Open(dialector, &gorm.Config{})
-	//handle error
 	if err != nil {
-		panic("error")
+		panic("Cannot open stub database")
 	}
 
 	//mock the db.Find function
 	rows := sqlmock.NewRows([]string{"id", "url", "expire_at", "short_url"}).
-		AddRow(1, "http://somelongurl.com", "some_date", "http://shorturl.com")
-	mock.ExpectQuery(regexp.QuoteMeta(testQuery)).
-		WillReturnRows(rows).WithArgs(id)
+		AddRow(1, "url", "date", "shorurl")
 
-	getURL(w, r)
+	//try to match the real SQL syntax we get and testQuery
+	mock.ExpectQuery(regexp.QuoteMeta(testQuery)).WillReturnRows(rows).WithArgs(id)
 
-	fmt.Println("IPASDJOAJSDOIAJSDOIJASDOIAJDS")
-	fmt.Println(rows)
-	fmt.Println(w.Body)
+	//set the value send into the function
+	vars := map[string]string{
+		"id": "1",
+	}
 
-	//check values in mockedWriter using assert
+	//create response writer and request for testing
+	mockedWriter := httptest.NewRecorder()
+	mockedRequest := httptest.NewRequest("GET", "/{id}", nil)
+	mockedRequest = mux.SetURLVars(mockedRequest, vars)
+
+	//call getURL()
+	getURL(mockedWriter, mockedRequest)
+
+	//check result in mockedWriter mocksql built function
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("SQL syntax is not match: %s", err)
+	}
 
 }

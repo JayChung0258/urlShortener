@@ -81,9 +81,12 @@ func main() {
 
 //API controllers
 func getURLs(w http.ResponseWriter, r *http.Request) {
-	// define a type
+
 	var urls []Url
-	// find and match
+	// stmt := db.Session(&gorm.Session{DryRun: true}).Find(&urls).Statement
+	// syntax := stmt.SQL.String() //returns SQL query string without the param value
+	// fmt.Println(syntax)
+
 	err := db.Find(&urls).Error
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -96,12 +99,9 @@ func getURL(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var url Url
 
-	// stmt := db.Session(&gorm.Session{DryRun: true}).Find(&url, params["id"]).Statement
-	// syntax := stmt.SQL.String() //returns SQL query string without the param value
-	// fmt.Println(syntax)
-
 	err := db.Find(&url, params["id"]).Error
 	if err != nil {
+		fmt.Println("status not found")
 		w.WriteHeader(http.StatusNotFound)
 	} else {
 		// check if expired

@@ -62,7 +62,7 @@ psql postgresql
 # log in to the database interactive mode
 ```
 
-### Usage
+## Usage
 You can use cmd/terminal or Postman to use urlshortener. Here we introduce the way on cmd/terminal.
 
 
@@ -102,7 +102,7 @@ curl -L -X GET http://localhost/urls
 
 
 
-### Ideas
+## Ideas
 一開始看到這個題目，第一個是先去找縮網址的網站，看看它的運作原理，在做這題目之前，我以為縮網址的運作原理是用數學計算，後來發現題目可以使用database，才發現原來是要把原網址跟縮網址pair再一起，放在資料庫裡面等待檢索。
 
 因為在寫這份作業之前，對於資料庫的了解不太深，僅有在前端call過後端做好的API而已，因此這次使用Postgresql也是一個挑戰，只不過因為畢業論文也是使用Postgresql，因此剛好來學習使用它。
@@ -113,10 +113,10 @@ curl -L -X GET http://localhost/urls
 
 但完成之後隔天睡起來又想到，阿別人要怎麼使用我的程式呢，於是我把它整包丟到另外一台電腦上，發現光環境的設定就快不行了，搞了超久才弄好，於是我就想到，如果打包起來丟過來不就好了嗎，於是這是我第一次學習docker，琢磨了一天，成功包起來使用compose的方式啟動我的url image 和 postgres image讓另外一台電腦可以無痛運行。
 
-### Database
+## Database
 原本想使用本地記憶體像是Redis之類的，應該會比連線資料庫簡單且快速，但因為論文有使用Postgresql的需求，因此就順便在這次的作業中實現了。
 
-### Standard libs
+## Standard libs
 * fmt
 fmt用來做基本字串串接以及print out
 * net/http
@@ -134,7 +134,7 @@ json來encode/decode檔案
 * testing
 原生的Go test 
 
-### 3rd Party libs
+## 3rd Party libs
 * 資料庫處理: go-gorm
 gorm V2可以以簡潔的方式處理資料庫的連接，以及強大的ORM支援，在Go檔案中就可以處理SQL syntax
 ```
@@ -164,7 +164,7 @@ http.ListenAndServe(":80", router)
 	})
 ```
 
-### Unit Test (Unfinished)
+## Unit Test (Unfinished)
 Unit Test因為時間的關係，目前只有做出`getURL()`的測試，這裡測試的重點在於SQL syntax，不在於http連線，以`getURL()`為例子，我們預期會得到的SQL syntax為 
 `SELECT * FROM "urls" WHERE "urls"."id"=<id>`，下圖為測試的示意圖。
 ![](https://i.imgur.com/dsrSb43.png)
